@@ -97,7 +97,7 @@ typedef struct {
 	
 }ssp_init_str;
 
-bool SPP_Init(void* const ssp_object, const ssp_init_str* const config);
-void SPP_Handler(void* ssp_object);
+bool SPP_Init(ssp_str* const ssp, const ssp_init_str* const config);
+void SPP_Handler(ssp_str* ssp);
 	
 #endif /* SSP_H_ */

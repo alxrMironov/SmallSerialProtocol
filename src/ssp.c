@@ -76,10 +76,8 @@ static inline void ResetReceiver_(ssp_str* ssp);
  *	
  */
 
-bool SPP_Init(void* const ssp_object, const ssp_init_str* const config)
+bool SPP_Init(ssp_str* const ssp, const ssp_init_str* const config)
 {
-	ssp_str* ssp = ssp_object;
-	
 	if( ssp
 	and config->CRC8_Function
 	and config->INPUT_GetByte_
@@ -103,10 +101,8 @@ bool SPP_Init(void* const ssp_object, const ssp_init_str* const config)
 	else { return false; }
 }
 
-void SPP_Handler(void* const ssp_object)
+void SPP_Handler(ssp_str* const ssp)
 {
-	ssp_str* ssp = ssp_object;
-	
 	// Sending received data further
 	// Dont try to receive anything before it done
 	if(PushAllReceivedData(ssp))
