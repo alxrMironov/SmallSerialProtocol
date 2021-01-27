@@ -18,9 +18,9 @@
 
 // CRC8 Macro
 //
-#define ResetCRC8(ssp_obj)		ssp_obj->crc8 = 0
-#define PushCRC8(ssp_obj, x)	ssp_obj->crc8 = ssp_obj->CRC8_Function(x, ssp_obj->crc8)
-#define GetCRC8(ssp_obj)		ssp_obj->crc8
+#define ResetCRC8(ssp_obj)		(ssp_obj->crc8 = 0)
+#define PushCRC8(ssp_obj, x)	(ssp_obj->crc8 = ssp_obj->CRC8_Function(x, ssp_obj->crc8))
+#define GetCRC8(ssp_obj)		(ssp_obj->crc8)
 
 // Local types
 //
@@ -120,8 +120,8 @@ void SPP_Handler(void* const ssp_object)
 static inline ssp_rx_answer_enum 
 ReceptionHandler_(ssp_str* ssp)
 {
-	#define DecIndex()		ssp->rx.index--; ssp->rx.index &= OVERFLOW_MASK;
-	#define IncLocalIndex()	local_index++; local_index &= OVERFLOW_MASK;
+	#define DecIndex()		({ssp->rx.index--; ssp->rx.index &= OVERFLOW_MASK;})
+	#define IncLocalIndex()	({local_index++; local_index &= OVERFLOW_MASK;})
 	
 	uint8_t received;
 	
@@ -139,7 +139,7 @@ ReceptionHandler_(ssp_str* ssp)
 	else {
 		DecIndex();	// Skip CRC8
 		ssp->rx.id = ssp->rx.buffer[ssp->rx.index];
-		DecIndex()
+		DecIndex();
 		ssp->rx.size = ssp->rx.buffer[ssp->rx.index];
 		// Index wasnt decremented, cause needed in CRC8 calculation
 		
@@ -171,6 +171,9 @@ ReceptionHandler_(ssp_str* ssp)
 		if(payload_size == 0){ return ACK_RECEIVED; }
 		else { return FRAME_RECEIVED; }
 	}
+	
+	#undef DecIndex
+	#undef IncLocalIndex
 }
 
 static inline bool 
@@ -234,7 +237,7 @@ CreateAck_(ssp_str* ssp, uint8_t id_to_ack)
 static inline bool
 CreateFrame_(ssp_str* ssp)
 {
-	#define AddByteToParcel(x) ssp->tx.frame.data[data_size] = x; data_size++;
+	#define AddByteToParcel(x) ({ssp->tx.frame.data[data_size] = x; data_size++;})
 	
 	// Leave if no input
 	uint8_t value;
@@ -277,6 +280,7 @@ CreateFrame_(ssp_str* ssp)
 	ssp->tx.frame.size = data_size;
 
 	return true;
+	
 	#undef AddByteToParcel
 }
 
