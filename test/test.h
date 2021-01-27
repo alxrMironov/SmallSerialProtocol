@@ -1,4 +1,9 @@
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef TEST_H_
 #define TEST_H_
 
@@ -9,13 +14,14 @@
 #include "ssp.h"
 #include "ssp.c"
 
+
 //static char string[4096];
 
 static uint8_t test_uart_rxed_index;
 static uint8_t test_uart_txed_index;
 static size_t test_uart_len;
 
-static uint8_t test_uart_array[4096] = {};
+static uint8_t test_uart_array[4096] = { 0 };
 	/*
 static uint8_t test_uart_output_array[128] = {
 	35, 125, 159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98,
@@ -33,7 +39,7 @@ static uint8_t test_serial_to_tx_index;
 static size_t test_serial_rxed_len;
 static size_t test_serial_to_tx_len;
 
-static uint8_t test_serial_rxed_array[4096] = {};
+static uint8_t test_serial_rxed_array[4096] = { 0 };
 	
 static uint8_t test_serial_to_tx_array[128] = {
 	140, 0xFF, 48, 0xFF, 0xFF, 0xAA, 81, 0xAA, 78, 0xAA, 242, 0xAA, 0xAA, 113, 147, 205,
@@ -134,7 +140,7 @@ static const ssp_init_str ssp_config_structure = {
 	TEST_SERIAL_PutByte,
 };
 	
-ssp_str ssp_object = {};
+ssp_str ssp_object = { 0 };
 ssp_str* const ssp = &ssp_object;
 	
 static const ssp_init_str* const ssp_config = &ssp_config_structure;

@@ -1,9 +1,16 @@
 /*
+ * Small serial protocol
  * ssp.c
+ * 
  *
  * Created: 20.01.2021 4:39:25
- *  Author: USER-PC
+ * Author: alxrmironov@gmail.com
  */ 
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -120,8 +127,8 @@ void SPP_Handler(void* const ssp_object)
 static inline ssp_rx_answer_enum 
 ReceptionHandler_(ssp_str* ssp)
 {
-	#define DecIndex()		({ssp->rx.index--; ssp->rx.index &= OVERFLOW_MASK;})
-	#define IncLocalIndex()	({local_index++; local_index &= OVERFLOW_MASK;})
+	#define DecIndex()		{ssp->rx.index--; ssp->rx.index &= OVERFLOW_MASK;}
+	#define IncLocalIndex()	{local_index++; local_index &= OVERFLOW_MASK;}
 	
 	uint8_t received;
 	
@@ -237,7 +244,7 @@ CreateAck_(ssp_str* ssp, uint8_t id_to_ack)
 static inline bool
 CreateFrame_(ssp_str* ssp)
 {
-	#define AddByteToParcel(x) ({ssp->tx.frame.data[data_size] = x; data_size++;})
+	#define AddByteToParcel(x) {ssp->tx.frame.data[data_size] = x; data_size++;}
 	
 	// Leave if no input
 	uint8_t value;
@@ -309,3 +316,6 @@ GenerateNewID_(uint8_t previous_id)
 	return new_id;
 }
 
+#ifdef __cplusplus
+}
+#endif

@@ -1,3 +1,17 @@
+
+/*
+ * Small serial protocol
+ * ssp.c
+ * 
+ *
+ * Created: 20.01.2021 4:39:25
+ * Author: alxrmironov@gmail.com
+ */ 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef SSP_H_
 #define SSP_H_
 

@@ -5,6 +5,10 @@
  *
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -279,3 +283,7 @@ void test_create_frame(void){
 		CreateFrameWithSize(0, false);
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif
