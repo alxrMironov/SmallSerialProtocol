@@ -61,6 +61,7 @@ typedef struct {
 	bool (*OUTPUT_PutByte_)(uint8_t value);
 	
 	struct {
+		uint8_t last_received_id;
 		uint8_t buffer[BUFFER_TOTAL_SIZE];
 		uint8_t index;
 		uint8_t size;

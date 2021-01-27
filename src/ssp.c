@@ -39,31 +39,40 @@ typedef enum {
 	BROKEN_RECEIVED,
 }ssp_rx_answer_enum;
 
-const size_t SSP_OBJECT_SIZE = sizeof(ssp_str);
-
+// Local functions declaration
+//
 static inline void CreateAck_(ssp_str* ssp, uint8_t id_to_ack);
 static inline bool CreateFrame_(ssp_str* ssp);
-
 static inline void SetupTransmitterForAck_(ssp_str* ssp);
 static inline void SetupTransmitterForFrame_(ssp_str* ssp);
-
 static inline ssp_rx_answer_enum ReceptionHandler_(ssp_str* ssp);
 static inline bool TransmissionHandler_(ssp_str* ssp);
-
 static inline uint8_t GenerateNewID_(uint8_t previous_id);
-
+static inline bool PushAllReceivedData(ssp_str* ssp);
 static inline bool PushAllToOutput_(ssp_str* ssp);
+static inline void ResetReceiver_(ssp_str* ssp);
 
 /*
- *	Parcel structure
- *	D - data
- *	CM - collision marker (included in size and CRC8)
- *	CR - collision resolver (included in size and CRC8)
- *	
- *	MAX_PARCEL_SIZE == MAX_PAYLOAD_SIZE * 2 + HEADER_SIZE
- *	CRC8\SIZE\ID != CM
- *	
- *	[D n] [D n+1] [CM] [CR] [D n+4] [ID] [SIZE] [CRC8] [END]
+ *  SSP short description.
+ * 
+ *  First in first out.
+ *  Header sent in the end of frame, after payload.
+ *  
+ *  Collisions:
+ *  As SSP use 0xFF as END marker, 0xFF symbol cannot be transmitted.
+ *  This why all 0xFF encode as two bytes - Collision marker + collision resolver
+ * 
+ *  Collision marker 0xAA
+ *  Collision resolver - 0x00(True 0xAA) 0x01(Encoded 0xFF)
+ *  
+ *  Max payload size - 30 bytes
+ *  Header size - 4 bytes (END included)
+ *  Max frame size - 64 bytes (Wrost collision case - all 0xFF or 0xAA)
+ * 
+ *  Parcel per byte representation example:
+ *   - 4 payload bytes
+ *   - 1 with collisions
+ *	[D n] [D n+1] [CM n+2] [CR] [D n+3] [ID] [SIZE] [CRC8] [END]
  *	
  */
 
@@ -80,7 +89,9 @@ bool SPP_Init(void* const ssp_object, const ssp_init_str* const config)
 	{
 		memset(ssp, 0, sizeof(ssp_str));
 		
+		// No frame been sended before - ready to send next
 		ssp->tx.frame.ack_received = true;
+
 		ssp->CRC8_Function		= config->CRC8_Function;
 		ssp->INPUT_GetByte_		= config->INPUT_GetByte_;
 		ssp->OUTPUT_PutByte_	= config->OUTPUT_PutByte_;
@@ -96,32 +107,56 @@ void SPP_Handler(void* const ssp_object)
 {
 	ssp_str* ssp = ssp_object;
 	
+	// Sending received data further
+	// Dont try to receive anything before it done
+	if(PushAllReceivedData(ssp))
 	switch(ReceptionHandler_(ssp)){
 		case ACK_RECEIVED:
-			// Timeout is in progress - check ACK
+			// If awaiting ACK - check received
 			if(ssp->tx.timeout > 0){
+				// Allow next frame sending on match
 				if(ssp->tx.frame.id == ssp->rx.id){
 					ssp->tx.timeout = 0;
 					ssp->tx.frame.ack_received = true;
 				}
 			}
+			// We dont need ACK data to be pushed out.
+			ResetReceiver_(ssp);
 			break;
 		
 		case FRAME_RECEIVED:
-			// If already ACKing - ignore frame
+			// If ready to ACK 
 			if(ssp->tx.ack.id == ID_NONE){
+
+				// If new frame - remember ID
+				// and leave receiver state for pushing data further
+				if(ssp->rx.id != ssp->rx.last_received_id) {
+					ssp->rx.last_received_id = ssp->rx.id;
+				}
+				// If frame already been received - clear buffer
+				// We dont need duplicate data to be pushed out.
+				else { ResetReceiver_(ssp); }
+
+				// Always send ACK on successfully received frame
 				ssp->tx.ack.id = ssp->rx.id;
 			}
 			break;
 		
 		default:
+			// Unreachable
+			/* fallthru */
+
 		case BROKEN_RECEIVED:
+			// We dont need broken data to be pushed out.
+			ResetReceiver_(ssp);
+			/* fallthru */
+
 		case NOTHING_RECEIVED:
+			// No frame been assembled
 			break;
 	}
 	
 	TransmissionHandler_(ssp);
-	
 }
 
 static inline ssp_rx_answer_enum 
@@ -184,6 +219,26 @@ ReceptionHandler_(ssp_str* ssp)
 }
 
 static inline bool 
+PushAllReceivedData(ssp_str* ssp)
+{
+	if(ssp->rx.index > ssp->rx.size){
+		
+		while(ssp->rx.index > ssp->rx.size) {
+
+			bool is_sended = ssp->OUTPUT_PutByte_(ssp->rx.buffer[ssp->rx.index]);
+			if(not is_sended) { return false; }
+			ssp->rx.index++;
+			ssp->rx.index &= OVERFLOW_MASK;
+		}
+
+		// When everything pushed out
+		ResetReceiver_(ssp);
+	}
+	
+	return true;
+}
+
+static inline bool 
 PushAllToOutput_(ssp_str* ssp)
 {
 	if(ssp->tx.counter < ssp->tx.size){
@@ -201,6 +256,8 @@ PushAllToOutput_(ssp_str* ssp)
 	
 	return true;
 }
+
+
 
 static inline bool 
 TransmissionHandler_(ssp_str* ssp)
@@ -306,6 +363,13 @@ SetupTransmitterForFrame_(ssp_str* ssp)
 	ssp->tx.size = ssp->tx.frame.size;
 	ssp->tx.counter = 0;
 	ssp->tx.timeout = 0;
+}
+
+static inline void 
+ResetReceiver_(ssp_str* ssp)
+{
+	ssp->rx.index = 0;
+	ssp->rx.size = 0;
 }
 
 static inline uint8_t 
