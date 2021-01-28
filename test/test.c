@@ -189,8 +189,10 @@ void test_setup_transmitter_ack(void)
 	ssp_frame_header_str expected_header = {expected_size, expected_id, 0, END_MARKER};
 		
 	// Init expected crc8
-	uint8_t expected_crc8 = TEST_HELPER_DallasCRC8_P((uint8_t*)&expected_header, 2);
-	expected_header.crc8 = expected_crc8;
+	expected_header.crc8 = TEST_HELPER_DallasCRC8_P((uint8_t*)&expected_header, 2);
+
+	// CRC8 Collision handling
+	if(expected_header.crc8 == END_MARKER) { expected_header.crc8 = COLLISION_MARKER; }
 	
 	const uint8_t SIZE_INDEX = 0;
 	const uint8_t ID_INDEX = SIZE_INDEX + 1;
@@ -246,8 +248,10 @@ void test_create_ack(void)
 	ssp_frame_header_str expected_header = {expected_size, expected_id, 0, END_MARKER};
 		
 	// Init expected crc8
-	uint8_t expected_crc8 = TEST_HELPER_DallasCRC8_P((uint8_t*)&expected_header, 2);
-	expected_header.crc8 = expected_crc8;
+	expected_header.crc8 = TEST_HELPER_DallasCRC8_P((uint8_t*)&expected_header, 2);
+
+	// CRC8 Collision handling
+	if(expected_header.crc8 == END_MARKER) { expected_header.crc8 = COLLISION_MARKER; }
 	
 	// TEST
 	CreateAck_(ssp, generated_id);

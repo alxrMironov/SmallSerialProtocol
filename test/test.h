@@ -217,6 +217,9 @@ void CreateFrameWithSize(uint8_t payload_size, bool ex_result)
 	}
 	ex_crc8 = TEST_HELPER_DallasCRC8_(ex_header_size, ex_crc8);
 	ex_crc8 = TEST_HELPER_DallasCRC8_(ex_id, ex_crc8);
+
+	// CRC8 Collision handling
+	if(ex_crc8 == END_MARKER) { ex_crc8 = COLLISION_MARKER; }
 	
 	// Init indexes
 	const uint8_t SIZE_INDEX = ex_header_size;

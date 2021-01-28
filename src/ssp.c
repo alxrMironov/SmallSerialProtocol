@@ -291,6 +291,12 @@ CreateAck_(ssp_str* ssp, uint8_t id_to_ack)
 	ssp->tx.ack.size = HEADER_SIZE;
 	ssp->tx.ack.id = id_to_ack;
 	ssp->tx.ack.crc8 = GetCRC8(ssp);
+
+	// CRC8 collision handling
+	if(ssp->tx.ack.crc8 == END_MARKER) {
+		ssp->tx.ack.crc8 = COLLISION_MARKER;
+	}
+
 	ssp->tx.ack.end = END_MARKER;
 }
 
@@ -334,6 +340,12 @@ CreateFrame_(ssp_str* ssp)
 	AddByteToParcel(ssp->tx.frame.id);
 	
 	ssp->tx.frame.data[data_size] = GetCRC8(ssp); 
+
+	// CRC8 collision handling
+	if(ssp->tx.frame.data[data_size] == END_MARKER) {
+		ssp->tx.frame.data[data_size] = COLLISION_MARKER;
+	}
+
 	data_size++;
 	ssp->tx.frame.data[data_size] = END_MARKER; 
 	data_size++;
